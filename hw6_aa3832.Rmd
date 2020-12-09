@@ -161,6 +161,23 @@ So instead, maybe I'll just take a look at the summary here and see about famili
 baby_df %>% pull(fincome) %>% summary()
 ```
 
+```{r}
+baby_df = 
+  read_csv("./birthweight_data/birthweight.csv") %>% 
+  mutate(
+    babysex = as.factor(babysex),
+    malform = as.factor(malform),
+    poverty = case_when(
+      fincome <25  ~ 1,
+      fincome >25  ~ 0),
+    poverty = as.factor(poverty))
+```
+
+Ok, I think this may be more reasonable for a model to consider a poverty level that includes families in the lowest quartile of family income. 
+
+## Plots to consider
+
+
 Plots to consider
 
 ```{r}
@@ -195,21 +212,9 @@ baby_df %>%
   geom_point() + 
   labs(title = "ga age")
 ```
+This is a clear relatiosnhip that's fairly well known,  Premature babies tend to be smaller in size.  
 
-```{r}
-baby_df = 
-  read_csv("./birthweight_data/birthweight.csv") %>% 
-  mutate(
-    babysex = as.factor(babysex),
-    malform = as.factor(malform),
-    poverty = case_when(
-      fincome <25  ~ 1,
-      fincome >25  ~ 0))
-```
-
-Ok, I think this may be more reasonable for a model to consider a poverty level that includes families in the lowest quartile of family income. 
-
-## Build a model
+## Building a model
 
 ```{r}
 poverty_model = lm(bwt ~ poverty + smoken + momage, data = baby_df) 
@@ -229,8 +234,6 @@ baby_df %>%
 ```
 
 Looks pretty darn linear. 
-
-
 
 # Problem 3
 
