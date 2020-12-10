@@ -18,7 +18,6 @@ library(broom)
 library(modelr)
 library(mgcv)
 
-
 knitr::opts_chunk$set(
   fig.width = 6,
   fig.height = 6,
@@ -141,7 +140,7 @@ Model building, look at the p values, residuals,
 
 I first looked up the poverty level for a family of three in the Dept HHS 2018 guidelines, which was $20,780 per year and so that's approx $1800 per month.  
 
-I wanted to consider the poverty variable, but looks like this dataset doesn't quite represent a population of American households because very few have a monthly income that's <$1800 per month.  
+I wanted to consider a 'poverty' variable, but looks like this dataset doesn't quite represent a true population of American households as very few have a monthly income that's <$1800 per month. 
 
 ```{r}
 baby_df = 
@@ -160,6 +159,15 @@ So instead, maybe I'll just take a look at the summary here and see about famili
 ```{r}
 baby_df %>% pull(fincome) %>% summary()
 ```
+
+Might also be a good idea to just see a summary of birthweights in general.  
+
+```{r}
+baby_df %>% pull(bwt) %>% summary()
+baby_df %>% pull(bwt) %>% mean()
+```
+
+Ok, so looking at a median and mean around 3100. 
 
 ```{r}
 baby_df = 
@@ -216,24 +224,99 @@ This is a clear relatiosnhip that's fairly well known,  Premature babies tend to
 
 ## Building a model
 
+### take 1
+
 ```{r}
-poverty_model = lm(bwt ~ poverty + smoken + momage, data = baby_df) 
+poverty_model = lm(bwt ~ poverty + momage, data = baby_df) 
 
 poverty_model %>%  
   broom::tidy()  %>% 
   select(term, estimate, p.value)
 ```
 
-Adding residuals and plotting.
+Both of these predictors appear to be quite significant.  
+
+Will add residuals and plot it here now.  
 
 ```{r}
 baby_df %>% 
   modelr::add_residuals(poverty_model) %>% 
   ggplot(aes(x = bwt, y = resid)) +
+  geom_point() +
+  labs(
+    title = "poverty model residuals plot")
+```
+
+Residuals plot looks pretty darn linear, which suggests this is a terrible model. The residuals for max and min outliers are quite extreme.  
+
+```{r}
+summary(poverty_model) 
+```
+
+And yes, just to reconfirm, the adjusted Rsquared value is awful at 0.03 in the poverty_model.  
+
+Here is the predictions plot.
+
+```{r}
+baby_df %>% 
+  modelr::add_predictions(poverty_model) %>% 
+  ggplot(aes(x = bwt, y = pred)) +
   geom_point()
 ```
 
-Looks pretty darn linear. 
+Based on these data,I would certainly not use my model to predict birthweight based on a definition of poverty as family income in the lowest quartile and mother's age.  
+
+
+### take 2
+
+Let's try again with something more standardized, I'll make a model considering the mother's weight at deliviery, as well as her weight gain, over the period of gestational age, in weeks. 
+
+```{r}
+weight_model= lm(bwt ~ delwt + wtgain + gaweeks, data = baby_df) 
+
+weight_model %>%  
+  broom::tidy()  %>% 
+  select(term, estimate, p.value)
+```
+
+```{r}
+summary(weight_model)
+```
+
+```{r}
+baby_df %>% 
+  modelr::add_residuals(weight_model) %>% 
+  ggplot(aes(x = bwt, y = resid)) +
+  geom_point() +
+  labs(
+    title = "weight model residuals plot")
+```
+
+Still pretty linear appearing but at least it's better than the poverty model.  I'll plan to keep this one.  
+
+## Building the two other models in this assignment for consideration.
+
+```{r}
+predictor_model_1 = 
+  lm(bwt ~ blength + gaweeks, data = baby_df)
+
+predictor_model_1 %>% 
+  broom::tidy()
+
+summary(predictor_model_1)
+```
+
+```{r}
+predictor_model_2 = 
+  lm(bwt ~ bhead + blength + babysex, data = baby_df)
+
+predictor_model_2 %>% 
+  broom::tidy()
+
+summary(predictor_model_2)
+```
+
+Clearly, the two models
 
 # Problem 3
 
