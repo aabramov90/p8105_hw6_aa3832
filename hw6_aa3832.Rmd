@@ -253,7 +253,7 @@ Residuals plot looks pretty darn linear, which suggests this is a terrible model
 summary(poverty_model) 
 ```
 
-And yes, just to reconfirm, the adjusted Rsquared value is awful at 0.03 in the poverty_model.  
+And yes, just to reconfirm, the R^2^ and adjusted R^2^ value is awful at 0.03 in the poverty_model.  
 
 Here is the predictions plot.
 
@@ -264,7 +264,7 @@ baby_df %>%
   geom_point()
 ```
 
-Based on these data,I would certainly not use my model to predict birthweight based on a definition of poverty as family income in the lowest quartile and mother's age.  
+Based on these data,I would certainly not use my model to predict birthweight based on this definition of poverty as family income in the lowest quantile and the mother's age.  
 
 
 ### take 2
@@ -382,11 +382,23 @@ temp_model %>%
   broom::glance()
 ```
 
-I can safely say I've never seen p values this low.  Incredible!  The R-squared value here is quite high at 0.912 suggesting this simple linear regression is a good fit for these data.
+I can safely say I've never seen p values this low.  Incredible!  The R^2^ value here is quite high at 0.912 suggesting this simple linear regression is a good fit for these data.
 
-Here we will use the bootstrapping method for the R^2^ value.
+Here we will use the bootstrapping method for the R^2^ value in the weather_df.
 
 ```{r}
+boot_straps = 
+  weather_df %>% 
+  modelr::bootstrap(n = 500) %>% 
+  mutate(
+    models = map(strap, ~lm(tmax ~ tmin, data = .x) ),
+    results = map(models, broom::glance)) %>% 
+  select(-strap, -models) %>% 
+  unnest(results)
 
+boot_straps %>% 
+  ggplot(aes(x = .id, y = r.squared)) +
+  geom_point()
 ```
 
+Hm, I just made this bootstrap with 500 iterations for now since my computer is slow and takes forever to load the 5000 bootstrap samples.  
